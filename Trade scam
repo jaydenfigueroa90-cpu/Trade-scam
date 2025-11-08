@@ -1,0 +1,227 @@
+
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+
+local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+
+-- ScreenGui
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "CoolUI"
+screenGui.ResetOnSpawn = false
+screenGui.Parent = playerGui
+screenGui.IgnoreGuiInset = true
+
+-- helper: rounded corners
+local function addCorner(inst, radius)
+	local c = Instance.new("UICorner")
+	c.CornerRadius = UDim.new(0, radius or 8)
+	c.Parent = inst
+	return c
+end
+
+-- main panel (200x160)
+local panel = Instance.new("Frame")
+panel.Name = "MainPanel"
+panel.Size = UDim2.new(0, 200, 0, 160)
+panel.Position = UDim2.new(0.5, -100, 0.5, -80)
+panel.AnchorPoint = Vector2.new(0.5, 0.5)
+panel.BackgroundColor3 = Color3.fromRGB(16, 90, 60) -- dark base for neon
+panel.BorderSizePixel = 0
+panel.Active = true
+panel.Parent = screenGui
+addCorner(panel, 12)
+
+-- neon stroke (glowy border)
+local stroke = Instance.new("UIStroke", panel)
+stroke.Thickness = 3
+stroke.Color = Color3.fromRGB(40, 220, 140) -- neon green
+stroke.Transparency = 0.1
+
+-- subtle glow frame behind (for softness)
+local glow = Instance.new("Frame", panel)
+glow.Size = UDim2.new(1, 10, 1, 10)
+glow.Position = UDim2.new(0, -5, 0, -5)
+glow.BackgroundColor3 = Color3.fromRGB(40,220,140)
+glow.BackgroundTransparency = 0.92
+glow.ZIndex = panel.ZIndex - 1
+addCorner(glow, 14)
+
+-- title bar
+local titleBar = Instance.new("Frame", panel)
+titleBar.Size = UDim2.new(1, 0, 0, 30)
+titleBar.Position = UDim2.new(0, 0, 0, 0)
+titleBar.BackgroundTransparency = 1
+addCorner(titleBar, 10)
+
+local title = Instance.new("TextLabel", titleBar)
+title.Size = UDim2.new(1, -8, 1, 0)
+title.Position = UDim2.new(0, 4, 0, 0)
+title.BackgroundTransparency = 1
+title.Font = Enum.Font.GothamBold
+title.Text = "PREMIUM V2 [NexusHub]"
+title.TextColor3 = Color3.fromRGB(180, 255, 210)
+title.TextSize = 14
+title.TextXAlignment = Enum.TextXAlignment.Center
+title.TextYAlignment = Enum.TextYAlignment.Center
+
+-- controls container
+local controls = Instance.new("Frame", panel)
+controls.Size = UDim2.new(1, -16, 1, -46)
+controls.Position = UDim2.new(0, 8, 0, 36)
+controls.BackgroundTransparency = 1
+
+local layout = Instance.new("UIListLayout", controls)
+layout.Padding = UDim.new(0, 8)
+layout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+layout.SortOrder = Enum.SortOrder.LayoutOrder
+
+-- toggle creator (round switch)
+local function createToggle(labelText)
+	local holder = Instance.new("Frame")
+	holder.Size = UDim2.new(1, 0, 0, 36)
+	holder.BackgroundTransparency = 1
+	holder.Parent = controls
+
+	-- pill background
+	local pill = Instance.new("Frame", holder)
+	pill.Size = UDim2.new(0.94, 0, 0, 34)
+	pill.Position = UDim2.new(0.03, 0, 0, 0)
+	pill.BackgroundColor3 = Color3.fromRGB(20, 40, 32)
+	addCorner(pill, 10)
+
+	-- label
+	local lbl = Instance.new("TextLabel", pill)
+	lbl.Size = UDim2.new(0.66, 0, 1, 0)
+	lbl.Position = UDim2.new(0.03, 0, 0, 0)
+	lbl.BackgroundTransparency = 1
+	lbl.Font = Enum.Font.Gotham
+	lbl.Text = labelText
+	lbl.TextSize = 14
+	lbl.TextColor3 = Color3.fromRGB(220, 245, 220)
+	lbl.TextXAlignment = Enum.TextXAlignment.Left
+	lbl.TextYAlignment = Enum.TextYAlignment.Center
+
+	-- switch base
+	local sw = Instance.new("Frame", pill)
+	sw.Size = UDim2.new(0, 46, 0, 26)
+	sw.Position = UDim2.new(1, -56, 0.5, -13)
+	sw.BackgroundColor3 = Color3.fromRGB(60, 60, 66)
+	addCorner(sw, 14)
+
+	-- stroke for switch (neon subtle)
+	local swStroke = Instance.new("UIStroke", sw)
+	swStroke.Thickness = 1
+	swStroke.Color = Color3.fromRGB(40,220,140)
+	swStroke.Transparency = 0.6
+
+	-- knob (round)
+	local knob = Instance.new("Frame", sw)
+	knob.Size = UDim2.new(0, 20, 0, 20)
+	knob.Position = UDim2.new(0, 4, 0.5, -10)
+	knob.BackgroundColor3 = Color3.fromRGB(240,240,240)
+	addCorner(knob, 10)
+
+	-- invisible button for touch/click
+	local btn = Instance.new("TextButton", sw)
+	btn.Size = UDim2.new(1, 0, 1, 0)
+	btn.BackgroundTransparency = 1
+	btn.Text = ""
+	btn.AutoButtonColor = false
+
+	-- small state label
+	local stateLabel = Instance.new("TextLabel", holder)
+	stateLabel.Size = UDim2.new(1, -8, 0, 12)
+	stateLabel.Position = UDim2.new(0, 4, 1, -12)
+	stateLabel.BackgroundTransparency = 1
+	stateLabel.Font = Enum.Font.Gotham
+	stateLabel.TextSize = 11
+	stateLabel.Text = ""
+	stateLabel.TextColor3 = Color3.fromRGB(180, 255, 200)
+	stateLabel.TextXAlignment = Enum.TextXAlignment.Center
+
+	local on = false
+	local function setState(v)
+		on = v and true or false
+		if on then
+			TweenService:Create(knob, TweenInfo.new(0.14, Enum.EasingStyle.Quad), {Position = UDim2.new(1, -24, 0.5, -10)}):Play()
+			TweenService:Create(knob, TweenInfo.new(0.14), {BackgroundColor3 = Color3.fromRGB(100,220,140)}):Play()
+			TweenService:Create(swStroke, TweenInfo.new(0.14), {Transparency = 0}):Play()
+			stateLabel.Text = labelText .. " Enabled"
+			stateLabel.TextColor3 = Color3.fromRGB(120, 255, 180)
+		else
+			TweenService:Create(knob, TweenInfo.new(0.14, Enum.EasingStyle.Quad), {Position = UDim2.new(0, 4, 0.5, -10)}):Play()
+			TweenService:Create(knob, TweenInfo.new(0.14), {BackgroundColor3 = Color3.fromRGB(240,240,240)}):Play()
+			TweenService:Create(swStroke, TweenInfo.new(0.14), {Transparency = 0.6}):Play()
+			stateLabel.Text = labelText .. " Disabled"
+			stateLabel.TextColor3 = Color3.fromRGB(200, 150, 150)
+		end
+
+		-- clear label after delay
+		task.delay(1.8, function()
+			if stateLabel and stateLabel.Parent then stateLabel.Text = "" end
+		end)
+	end
+
+	btn.MouseButton1Click:Connect(function()
+		setState(not on)
+	end)
+
+	-- return API
+	return {
+		getState = function() return on end,
+		setState = setState,
+		_holder = holder
+	}
+end
+
+-- create toggles
+local t1 = createToggle("Freeze Trade")
+local t2 = createToggle("Auto Accept")
+local t3 = createToggle("Auto Add Items")
+
+-- subtle animation for neon border
+task.spawn(function()
+	local inc = true
+	while true do
+		local target = (inc and 0.03) or 0.18
+		TweenService:Create(stroke, TweenInfo.new(1.2), {Transparency = target}):Play()
+		inc = not inc
+		task.wait(1.2)
+	end
+end)
+
+-- dragging (mouse + touch)
+do
+	local dragging = false
+	local dragStart = Vector2.new()
+	local startPos = panel.Position
+	local dragInput
+
+	panel.InputBegan:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+			dragging = true
+			dragStart = input.Position
+			startPos = panel.Position
+			input.Changed:Connect(function()
+				if input.UserInputState == Enum.UserInputState.End then dragging = false end
+			end)
+		end
+	end)
+
+	panel.InputChanged:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+			dragInput = input
+		end
+	end)
+
+	UserInputService.InputChanged:Connect(function(input)
+		if dragging and input == dragInput then
+			local delta = input.Position - dragStart
+			panel.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+		end
+	end)
+end
+
+print("PREMIUM V2 [NexusHub] UI loaded (UI-only, seguro).")
