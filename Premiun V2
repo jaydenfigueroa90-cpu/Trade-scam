@@ -21,7 +21,7 @@ local function addCorner(inst, radius)
 	return c
 end
 
--- main panel (200x160)
+-- main panel
 local panel = Instance.new("Frame")
 panel.Name = "MainPanel"
 panel.Size = UDim2.new(0, 200, 0, 160)
@@ -33,10 +33,10 @@ panel.Active = true
 panel.Parent = screenGui
 addCorner(panel, 12)
 
--- neon stroke (glowy border)
+-- Green stroke (glowy border)
 local stroke = Instance.new("UIStroke", panel)
 stroke.Thickness = 3
-stroke.Color = Color3.fromRGB(40, 220, 140) -- neon green
+stroke.Color = Color3.fromRGB(40, 220, 140) --  green
 stroke.Transparency = 0.1
 
 -- subtle glow frame behind (for softness)
